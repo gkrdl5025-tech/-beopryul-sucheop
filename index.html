@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#1c5d66">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="법률수첩">
+<title>법률수첩</title>
+<style>
+/* 법률수첩: 휴대폰 한 손 조작 앱. 위 앱바 · 가운데 스크롤 본문 · 아래 5개 탭. 넓은 화면에서는 왼쪽에 프로토타입 안내. */
+:root {
+  --bg: #e9edf0;
+  --surface: #ffffff;
+  --surface-2: #f4f6f8;
+  --ink: #16222b;
+  --muted: #5a6872;
+  --line: #d3dbe1;
+  --accent: #1c5d66;
+  --accent-ink: #ffffff;
+  --accent-weak: #dfeced;
+  --warn: #8a5300;
+  --warn-bg: #fbf0dc;
+  --crit: #a8241c;
+  --crit-bg: #fbe8e6;
+  --good: #276437;
+  --good-bg: #e3f1e6;
+  --paper: #fffdf8;
+  --font-ui: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif;
+  --font-doc: "Nanum Myeongjo", "AppleMyungjo", "Batang", serif;
+  --radius: 12px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1418; --surface: #172128; --surface-2: #1d2931; --ink: #e6edf1; --muted: #9aabb6;
+    --line: #2c3a44; --accent: #6fb7bf; --accent-ink: #0b1a1d; --accent-weak: #1d3539;
+    --warn: #f0b860; --warn-bg: #33270f; --crit: #f08a80; --crit-bg: #3a1d1a;
+    --good: #85c995; --good-bg: #183024; --paper: #1b242a; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1418; --surface: #172128; --surface-2: #1d2931; --ink: #e6edf1; --muted: #9aabb6;
+  --line: #2c3a44; --accent: #6fb7bf; --accent-ink: #0b1a1d; --accent-weak: #1d3539;
+  --warn: #f0b860; --warn-bg: #33270f; --crit: #f08a80; --crit-bg: #3a1d1a;
+  --good: #85c995; --good-bg: #183024; --paper: #1b242a; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-ui); font-size: 15px; line-height: 1.55; -webkit-font-smoothing: antialiased; }
+button, input, select, textarea { font: inherit; color: inherit; }
+h1, h2, h3 { text-wrap: balance; margin: 0; line-height: 1.3; }
+p { margin: 0; }
+a { color: var(--accent); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.shell { height: 100%; display: flex; justify-content: center; gap: 32px; padding: 0; }
+.aside { display: none; }
+@media (min-width: 960px) {
+  .shell { padding: 24px; }
+  .aside { display: flex; flex-direction: column; gap: 16px; width: 300px; padding-top: 8px; overflow-y: auto; }
+  .app { border: 1px solid var(--line); border-radius: 20px; box-shadow: 0 8px 30px rgba(10, 30, 40, .10); }
+}
+.aside h2 { font-size: 20px; }
+.aside p, .aside li { color: var(--muted); font-size: 14px; }
+.aside ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; }
+.zone { display: grid; gap: 8px; }
+.zone-row { display: grid; grid-template-columns: 76px 1fr; gap: 8px; align-items: start; font-size: 13.5px; }
+
+.app { width: 100%; max-width: 440px; height: 100%; display: flex; flex-direction: column; background: var(--surface); overflow: hidden; position: relative; }
+.appbar { display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-bottom: 1px solid var(--line); min-height: 56px; }
+.appbar h1 { font-size: 17px; font-weight: 700; flex: 1; }
+.back { border: 0; background: none; padding: 6px 8px 6px 0; cursor: pointer; font-size: 15px; color: var(--accent); font-weight: 600; }
+.proto { font-size: 11.5px; padding: 2px 8px; border-radius: 999px; background: var(--warn-bg); color: var(--warn); font-weight: 600; white-space: nowrap; }
+main { flex: 1; overflow-y: auto; padding: 16px 16px 24px; display: flex; flex-direction: column; gap: 20px; }
+nav.tabs { display: grid; grid-template-columns: repeat(5, 1fr); border-top: 1px solid var(--line); background: var(--surface); }
+nav.tabs button { border: 0; background: none; padding: 8px 0 10px; display: grid; justify-items: center; gap: 2px; cursor: pointer; color: var(--muted); font-size: 12px; font-weight: 500; }
+nav.tabs button svg { width: 22px; height: 22px; }
+nav.tabs button[aria-current="page"] { color: var(--accent); font-weight: 700; }
+
+.section { display: flex; flex-direction: column; gap: 10px; }
+.section > h2 { font-size: 16px; font-weight: 700; }
+.lead h2 { font-size: 22px; font-weight: 700; }
+.lead p { color: var(--muted); margin-top: 6px; }
+.muted { color: var(--muted); }
+.small { font-size: 13px; }
+.card { border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; background: var(--surface); display: flex; flex-direction: column; gap: 8px; }
+.card.tap { cursor: pointer; text-align: left; width: 100%; }
+.card.tap:hover { border-color: var(--accent); }
+.card h3 { font-size: 15px; font-weight: 600; }
+.stack { display: flex; flex-direction: column; gap: 10px; }
+.row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.spread { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+
+textarea, input[type="text"], input[type="date"], input[type="number"], select {
+  width: 100%; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; background: var(--surface); }
+textarea { min-height: 128px; resize: vertical; }
+label.field { display: grid; gap: 6px; font-weight: 600; font-size: 14px; }
+label.field .hint { font-weight: 400; color: var(--muted); font-size: 13px; }
+
+.btn { border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink); border-radius: 10px; padding: 11px 16px; font-weight: 600; cursor: pointer; text-align: center; }
+form.row input { flex: 1; min-width: 0; }
+.btn { white-space: nowrap; }
+.btn.secondary { background: var(--surface); color: var(--accent); }
+.btn.ghost { background: none; border-color: var(--line); color: var(--ink); }
+.btn.block { width: 100%; }
+.btn:disabled { opacity: .55; cursor: default; }
+.chip { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 999px; font-size: 12.5px; font-weight: 600; border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); white-space: nowrap; }
+.chip.accent { background: var(--accent-weak); border-color: transparent; color: var(--accent); }
+.chip.warn { background: var(--warn-bg); border-color: transparent; color: var(--warn); }
+.chip.crit { background: var(--crit-bg); border-color: transparent; color: var(--crit); }
+.chip.good { background: var(--good-bg); border-color: transparent; color: var(--good); }
+.chip.solid { background: var(--accent); color: var(--accent-ink); border-color: transparent; }
+button.chip { cursor: pointer; }
+
+.banner { border-radius: var(--radius); padding: 14px; display: flex; flex-direction: column; gap: 8px; }
+.banner.crit { background: var(--crit-bg); color: var(--ink); border-left: 4px solid var(--crit); }
+.banner.warn { background: var(--warn-bg); border-left: 4px solid var(--warn); }
+.banner.info { background: var(--surface-2); border-left: 4px solid var(--accent); }
+.banner h3 { font-size: 15px; }
+.banner ul { margin: 0; padding-left: 18px; }
+
+.masked { background: var(--surface-2); border-radius: 10px; padding: 12px; font-size: 14px; white-space: pre-wrap; }
+mark { background: var(--accent-weak); color: var(--accent); border-radius: 4px; padding: 0 3px; font-weight: 600; }
+
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.tile { border: 1px solid var(--line); border-radius: var(--radius); padding: 12px; background: var(--surface); cursor: pointer; text-align: left; display: grid; gap: 2px; }
+.tile:hover { border-color: var(--accent); }
+.tile b { font-size: 14.5px; }
+.tile span { font-size: 12.5px; color: var(--muted); }
+
+.dday { font-variant-numeric: tabular-nums; font-weight: 700; font-size: 13px; padding: 3px 9px; border-radius: 8px; white-space: nowrap; }
+.dday.crit { background: var(--crit-bg); color: var(--crit); }
+.dday.warn { background: var(--warn-bg); color: var(--warn); }
+.dday.ok { background: var(--surface-2); color: var(--muted); }
+.dline { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.dline:last-child { border-bottom: 0; }
+.dline .when { font-variant-numeric: tabular-nums; font-size: 13px; color: var(--muted); }
+
+.big-date { font-size: 26px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.fact { display: grid; gap: 8px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.fact:last-child { border-bottom: 0; }
+.dir { font-size: 12px; font-weight: 600; }
+.dir.plus { color: var(--good); }
+.dir.minus { color: var(--crit); }
+.seg { display: grid; grid-template-columns: repeat(3, 1fr); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.seg button { border: 0; background: var(--surface); padding: 7px 0; cursor: pointer; font-size: 13.5px; font-weight: 500; }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); font-weight: 700; }
+.tally { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; text-align: center; }
+.tally div { background: var(--surface-2); border-radius: 10px; padding: 10px 4px; }
+.tally b { display: block; font-size: 22px; font-variant-numeric: tabular-nums; }
+.tally span { font-size: 12.5px; color: var(--muted); }
+
+.progress { height: 6px; background: var(--surface-2); border-radius: 999px; overflow: hidden; }
+.progress i { display: block; height: 100%; background: var(--accent); }
+.paper { background: var(--paper); border: 1px solid var(--line); border-radius: 6px; padding: 22px 20px; font-family: var(--font-doc); font-size: 14.5px; line-height: 1.85; white-space: pre-wrap; box-shadow: 0 2px 10px rgba(10, 30, 40, .06); }
+.kv { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; font-size: 14px; }
+.kv dt { color: var(--muted); }
+.kv dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+.kv dd.total { font-size: 18px; color: var(--accent); }
+.list-plain { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+.toast { position: absolute; left: 16px; right: 16px; bottom: 76px; background: var(--ink); color: var(--surface); padding: 12px 14px; border-radius: 10px; font-size: 14px; opacity: 0; transform: translateY(8px); transition: opacity .2s, transform .2s; pointer-events: none; }
+.toast.show { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) { .toast { transition: none; } }
+.empty { text-align: center; color: var(--muted); padding: 24px 8px; font-size: 14px; }
+.ev { display: grid; grid-template-columns: auto 1fr; gap: 4px 10px; font-size: 14px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.ev:last-child { border-bottom: 0; }
+.ev .when { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 13px; }
+details summary { cursor: pointer; font-weight: 600; }
+
+.steps { margin: 0; padding: 0; list-style: none; counter-reset: s; display: grid; gap: 0; }
+.steps li { counter-increment: s; display: grid; grid-template-columns: 28px 1fr; gap: 2px 10px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.steps li:last-child { border-bottom: 0; }
+.steps li::before { content: counter(s); grid-row: span 2; width: 24px; height: 24px; border-radius: 50%; background: var(--accent-weak); color: var(--accent); font-weight: 700; font-size: 13px; display: grid; place-items: center; font-variant-numeric: tabular-nums; }
+.steps li b { font-size: 14.5px; }
+dl.guide { margin: 0; display: grid; gap: 4px; }
+dl.guide dt { font-weight: 600; margin-top: 8px; }
+dl.guide dd { margin: 0; }
+.kv.small { font-size: 13px; margin-top: 6px; }
+.kv.small dd { font-weight: 500; }
+
+/* 휴대폰: 입력칸 16px(확대 방지), 하단 안전 영역, 터치 하이라이트 제거 */
+@media (max-width: 600px) {
+  textarea, input[type="text"], input[type="date"], input[type="number"], select { font-size: 16px; }
+  main { padding: 14px 14px 20px; }
+}
+nav.tabs { padding-bottom: env(safe-area-inset-bottom, 0px); }
+button, a, .tile, .card.tap { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+nav.tabs button { min-height: 52px; }
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="aside" aria-label="프로토타입 안내">
+    <h2>법률수첩 프로토타입</h2>
+    <p>공개된 법률 정보를 찾고, 기한과 비용을 계산하고, 공공 창구를 안내하는 도구예요. 사용자의 사건을 판단하거나 서류를 대신 만들지 않아요.</p>
+    <div class="card zone">
+      <b class="small">남긴 기능</b>
+      <div class="zone-row"><span class="chip good">정보</span><span class="muted">판례 검색, 절차 안내, 받은 서류 안내, 공공 창구 안내</span></div>
+      <div class="zone-row"><span class="chip good">계산</span><span class="muted">기한 계산기, 비용 계산기 (근거 표시)</span></div>
+      <div class="zone-row"><span class="chip good">검증</span><span class="muted">판례 사건번호 실제 존재 확인 (정식 버전)</span></div>
+    </div>
+    <div class="card zone">
+      <b class="small">뺀 기능</b>
+      <p class="small muted">사용자 상황 AI 분석, 위험 신호 판단, 판례 유리·불리 비교, 법원 제출 서류 자동 작성, 사용자 데이터의 서버·해외 전송</p>
+    </div>
+    <ul>
+      <li>판례는 모두 가상 예시예요.</li>
+      <li>입력한 내용은 이 브라우저 밖으로 나가지 않아요.</li>
+    </ul>
+  </aside>
+  <div class="app" id="app">
+    <header class="appbar" id="appbar"></header>
+    <main id="main" tabindex="-1"></main>
+    <nav class="tabs" id="tabs" aria-label="주요 메뉴"></nav>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ---------- 기본 데이터 ---------- */
+const SERVICE_FEE = 5640; // 송달료 1회분, 2026. 7. 1.부터
+const TOPICS = {
+  lease: { name: "전세·월세 보증금", sub: "보증금을 못 돌려받고 있어요", type: "임대차보증금",
+    steps: [
+      ["기록 모으기", "임대차계약서, 보증금 이체 내역, 계약을 끝내겠다고 알린 문자·통화 기록을 모아 두세요."],
+      ["반환 요청 남기기", "날짜가 남는 방법(문자, 내용증명 등)으로 반환을 요청하는 경우가 많아요."],
+      ["임차권등기명령", "보증금을 받기 전에 이사해야 할 때 법원에 신청하는 절차예요. 집 소재지 관할 법원에 내요."],
+      ["분쟁조정", "주택임대차분쟁조정위원회에서 소송보다 빠르고 비용이 적은 조정을 신청할 수 있어요."],
+      ["지급명령·소송", "법원 절차로 돌려받는 방법이에요. 비용은 계산기에서 미리 볼 수 있어요."]
+    ], guides: ["jigeup", "naeyong"] },
+  loan: { name: "빌려준 돈", sub: "돈을 빌려주고 못 받았어요", type: "대여금",
+    steps: [
+      ["기록 모으기", "계좌이체 내역, 차용증, 빌린 사실이나 갚을 날을 말한 대화를 날짜순으로 정리하세요."],
+      ["소멸시효 확인", "민사 채권의 소멸시효는 일반적으로 10년, 상행위로 생긴 채권은 5년이에요. 시효가 얼마 남지 않았다면 먼저 상담 창구에 물어보세요."],
+      ["지급명령", "서류만으로 진행되는 절차예요. 상대방이 2주 안에 이의신청하면 소송으로 넘어가요."],
+      ["소액소송", "3,000만 원 이하 금전 청구는 소액사건 절차로 진행돼요."],
+      ["강제집행", "확정된 판결이나 지급명령이 있어야 상대 재산에 강제집행을 할 수 있어요."]
+    ], guides: ["jigeup", "soaek"] },
+  used: { name: "중고거래 피해", sub: "돈을 보냈는데 물건이 안 와요", type: "중고거래사기",
+    steps: [
+      ["화면 저장", "판매 글, 대화, 송금 내역, 판매자 계좌·연락처를 지워지기 전에 캡처하세요."],
+      ["사이버범죄 신고", "경찰청 사이버범죄 신고시스템(ECRM)에서 온라인으로 신고할 수 있어요."],
+      ["돈을 돌려받는 절차", "형사 신고와 별개로, 민사 절차(소액소송 등)로 돈을 청구할 수 있어요."]
+    ], guides: ["soaek"] },
+  defame: { name: "모욕·명예훼손", sub: "온라인이나 단체방에서 욕을 들었어요", type: "명예훼손·모욕",
+    steps: [
+      ["화면 저장", "글이나 대화 화면, 날짜, 참여자 목록이 보이게 캡처하세요."],
+      ["고소 기간", "모욕죄처럼 피해자가 고소해야 하는 범죄(친고죄)는 범인을 알게 된 날부터 6개월 안에 고소해야 해요(형사소송법 제230조)."],
+      ["고소 접수", "경찰서 민원실에 고소장을 내거나, 온라인 피해는 사이버범죄 신고시스템을 이용할 수 있어요."]
+    ], guides: [] },
+  other: { name: "그 밖의 일", sub: "어디에 해당하는지 모르겠어요", type: "기타",
+    steps: [
+      ["무료 상담", "대한법률구조공단(132)이나 마을변호사에게 어떤 절차가 맞는지 먼저 물어보세요."],
+      ["기록 모으기", "언제 무슨 일이 있었는지 날짜순으로 적고, 관련 자료를 내 사건에 정리해 두세요."]
+    ], guides: [] }
+};
+
+/* 가상 예시 판례: 실제 판례가 아님 */
+const PRECEDENTS = [
+  { id: "ex-lease-1", type: "임대차보증금", title: "계약 만료 후 보증금 반환 청구", level: "1심", result: "청구 인정",
+    oneLine: "계약이 끝나고 임차인이 집을 비운 사건에서 임대인에게 보증금 반환을 명했어요.",
+    reason: "임대차가 끝나면 임차인은 집을 돌려주고, 임대인은 보증금을 돌려줘야 하며, 두 의무는 동시에 이행하는 관계라고 설명했어요. 새 임차인을 구하는 것은 계약서에 반환 조건으로 적혀 있지 않았다고 봤어요.",
+    facts: ["계약 만료 두 달 전 임차인이 문자로 갱신하지 않겠다고 알림", "임차인이 집을 비우고 열쇠를 반환함", "계약서에 '새 임차인 입주 후 반환' 조건이 없음"] },
+  { id: "ex-lease-2", type: "임대차보증금", title: "보증금에서 원상복구 비용 공제", level: "1심", result: "일부 인정",
+    oneLine: "보증금 반환을 명하면서, 임차인이 만든 파손의 수리비는 보증금에서 빼도록 했어요.",
+    reason: "임차인은 집을 돌려줄 때 원래 상태로 돌려놓아야 하지만, 오래 살며 자연히 생기는 낡음은 예외라고 설명했어요. 이 사건의 벽과 바닥 파손은 통상적인 사용 범위를 넘었다고 봤어요.",
+    facts: ["벽과 바닥에 생활 흔적을 넘는 파손이 있었음", "입주 때 상태를 보여 주는 사진이 없었음", "임대인이 수리 견적서를 제출함"] },
+  { id: "ex-lease-3", type: "임대차보증금", title: "임차권등기 후 이사, 지연손해금", level: "1심", result: "청구 인정",
+    oneLine: "임차권등기명령을 받고 이사한 임차인에게 보증금과 지연손해금 지급을 명했어요.",
+    reason: "임차권등기를 마치고 이사하면 대항력과 우선변제권이 유지된다고 설명하고, 반환이 늦어진 기간에 대한 지연손해금을 인정했어요.",
+    facts: ["임차인이 임차권등기명령을 받은 뒤 이사함", "임차인이 내용증명으로 반환을 요청함"] },
+  { id: "ex-loan-1", type: "대여금", title: "차용증 없는 대여금 청구", level: "1심", result: "청구 인정",
+    oneLine: "차용증은 없었지만 이체 기록과 메시지를 근거로 돈을 빌려준 사실을 인정했어요.",
+    reason: "돈을 빌려준 사실은 차용증이 없어도 다른 증거로 증명할 수 있다고 설명했어요. 상대방이 메시지에서 빌린 사실과 갚을 날을 말한 점을 근거로 들었어요.",
+    facts: ["원고가 피고에게 계좌이체로 돈을 보냄", "피고가 메시지로 '다음 달까지 갚겠다'고 함"] },
+  { id: "ex-loan-2", type: "대여금", title: "이체 기록만 있는 대여금 청구", level: "1심", result: "청구 기각",
+    oneLine: "돈을 보낸 기록은 있었지만 빌려준 것인지 준 것인지 증명이 부족하다고 봤어요.",
+    reason: "돈을 보냈다는 사실만으로 대여라고 보기는 어렵다고 설명했어요. 연인 사이에 생활비 명목으로 여러 번 보낸 돈이었고, 오랫동안 반환을 요구한 기록이 없었어요.",
+    facts: ["원고와 피고가 연인 관계였음", "여러 차례 생활비 명목으로 송금함", "수년간 반환 요구 기록이 없었음"] },
+  { id: "ex-used-1", type: "중고거래사기", title: "물건 없이 돈만 받은 중고거래", level: "1심", result: "유죄",
+    oneLine: "보낼 물건 없이 판매 글을 올리고 여러 사람에게 돈을 받은 판매자에게 사기죄를 인정했어요.",
+    reason: "사기죄는 처음부터 속일 생각이 있었는지가 핵심이라고 설명했어요. 같은 사진으로 여러 사람과 거래하고 돈을 받은 뒤 연락을 끊은 점을 근거로 들었어요.",
+    facts: ["같은 판매 글로 여러 명에게 돈을 받음", "입금 직후 연락을 차단함"] },
+  { id: "ex-used-2", type: "중고거래사기", title: "배송이 늦어진 중고거래", level: "1심", result: "무죄",
+    oneLine: "물건이 실제로 있었고 판매자가 일부를 환불한 사건에서 사기죄를 인정하지 않았어요.",
+    reason: "약속을 지키지 못했다고 모두 사기는 아니며, 처음부터 속일 생각이 있었다는 증명이 필요하다고 설명했어요. 이런 경우 돈 문제는 민사 절차로 다투게 된다고 했어요.",
+    facts: ["판매자가 실제로 물건을 갖고 있었음", "판매자가 연락을 유지하며 일부를 환불함"] },
+  { id: "ex-defame-1", type: "명예훼손·모욕", title: "단체 대화방에서의 욕설", level: "1심", result: "유죄",
+    oneLine: "여러 사람이 있는 단체 대화방에서 특정인을 욕한 행위에 모욕죄를 인정했어요.",
+    reason: "모욕죄는 여러 사람이 알 수 있는 상태(공연성)에서 누구를 가리키는지 알 수 있게 모욕해야 성립한다고 설명했어요.",
+    facts: ["30여 명이 있는 단체 대화방에서 발언함", "참여자들이 피해자가 누구인지 알았음"] },
+  { id: "ex-defame-2", type: "명예훼손·모욕", title: "1:1 메시지로 보낸 욕설", level: "1심", result: "무죄",
+    oneLine: "피해자에게만 보낸 1:1 메시지에 대해 모욕죄의 공연성을 인정하지 않았어요.",
+    reason: "공연성은 불특정 또는 여러 사람이 알 수 있는 상태를 말한다고 설명했어요. 다만 내용에 따라 다른 법이 문제될 수는 있다고 덧붙였어요.",
+    facts: ["피해자에게만 1:1로 메시지를 보냄", "다른 사람에게 전달된 사실이 없었음"] }
+];
+
+/* 받은 서류: 기간은 받은 다음 날부터 셈(초일 불산입), 끝날이 토·공휴일이면 다음 평일 */
+const RECEIVED = {
+  sojang: { name: "소장 부본", sub: "민사소송을 당했어요", days: 30, from: "소장 부본을 받은 날", action: "답변서 제출", basis: "민사소송법 제256조",
+    what: "상대방이 나를 상대로 민사소송을 냈다는 뜻이에요. 함께 온 안내서에 사건번호와 법원이 적혀 있어요.",
+    ifNot: "법은 기한 안에 답변서를 내지 않으면 법원이 변론 없이 판결할 수 있다고 정하고 있어요.",
+    next: ["대법원 '나의 사건검색'에서 사건번호로 진행 상황 확인", "답변서 작성 가이드 보기", "무료 상담 창구에 문의"], guide: "dapbyeon" },
+  ihaeng: { name: "이행권고결정서", sub: "소액사건에서 받았어요", days: 14, from: "결정서를 받은 날", action: "이의신청", basis: "소액사건심판법 제5조의4",
+    what: "3,000만 원 이하 소액사건에서 법원이 원고 청구대로 이행하라고 권고한 결정이에요.",
+    ifNot: "법은 2주 안에 이의신청이 없으면 확정판결과 같은 효력이 생긴다고 정하고 있어요.",
+    next: ["결정서에 적힌 이의신청 기간 확인", "무료 상담 창구에 문의"] },
+  jigeup: { name: "지급명령 정본", sub: "돈을 갚으라는 명령", days: 14, from: "지급명령을 받은 날", action: "이의신청", basis: "민사소송법 제470조",
+    what: "상대방 신청으로 법원이 서류만 보고 내린 지급 명령이에요. 아직 재판이 열린 것은 아니에요.",
+    ifNot: "법은 2주 안에 이의신청이 없으면 확정판결과 같은 효력이 생긴다고 정하고 있어요. 이 기간은 늘어나지 않는 불변기간이에요.",
+    next: ["명령서에 적힌 이의신청 기간 확인", "전자소송 또는 법원 민원실에서 이의신청서 양식 확인", "무료 상담 창구에 문의"] },
+  civil: { name: "민사 판결문", sub: "1심 판결을 받았어요", days: 14, from: "판결문을 받은 날", action: "항소", basis: "민사소송법 제396조",
+    what: "민사 재판의 결과예요. 판결에 불복하면 항소할 수 있어요.",
+    ifNot: "법은 항소 기간이 지나면 판결이 확정된다고 정하고 있어요.",
+    next: ["판결문에 적힌 내용과 날짜 확인", "무료 상담 창구에 문의"] },
+  criminal: { name: "형사 판결", sub: "선고를 받았어요", days: 7, from: "선고일", action: "항소", basis: "형사소송법 제358조",
+    what: "형사 재판에서 선고가 났어요. 피고인과 검사 모두 항소할 수 있어요.",
+    ifNot: "법은 선고일부터 7일이 지나면 판결이 확정된다고 정하고 있어요.",
+    next: ["변호인 또는 국선변호인과 상의", "대한법률구조공단(132) 문의"], criminal: true },
+  bojeong: { name: "보정명령", sub: "서류를 고치라고 해요", ask: true, days: 7, from: "보정명령을 받은 날", action: "보정서 제출", basis: "보정명령서에 적힌 기간",
+    what: "내가 낸 소장이나 신청서에 고칠 부분이 있다는 명령이에요. 기간은 명령서에 적혀 있어요.",
+    ifNot: "법은 기간 안에 보정하지 않으면 소장이나 신청이 각하될 수 있다고 정하고 있어요.",
+    next: ["명령서에서 고칠 내용과 기간 확인", "주소 보정이면 명령서를 들고 주민센터에서 초본 발급 절차 확인"] },
+  police: { name: "출석요구서", sub: "경찰·검찰에서 불렀어요", date: true, action: "출석", basis: "요구서에 적힌 날짜",
+    what: "수사기관이 조사를 위해 출석을 요구한 서류예요. 피의자인지 참고인인지 요구서에 적혀 있어요.",
+    ifNot: "출석 일정 조정이 필요하면 요구서에 적힌 담당 수사관에게 연락할 수 있어요.",
+    next: ["요구서에 적힌 신분(피의자·참고인)과 날짜 확인", "변호인 또는 대한법률구조공단(132) 문의"], criminal: true },
+  letter: { name: "내용증명", sub: "요구하는 편지를 받았어요", none: true, action: "답장 여부 결정", basis: "법정 기한 없음",
+    what: "상대방이 요구 사항을 우체국을 통해 공식 기록으로 남겨 보낸 편지예요. 우체국이 보낸 날짜와 내용을 증명해요.",
+    ifNot: "내용증명 자체에는 법이 정한 답장 기한이 없어요. 편지에 적힌 날짜는 보낸 사람이 정한 날짜예요.",
+    next: ["요구 내용 확인", "무료 상담 창구에 문의"] }
+};
+
+/* 2026~2027 공휴일(대체공휴일 포함). 정식 버전은 공공데이터포털 특일 정보로 매일 갱신 */
+const HOLIDAYS = new Set([
+  "2026-01-01","2026-02-16","2026-02-17","2026-02-18","2026-03-02","2026-05-05","2026-05-25","2026-06-03","2026-08-17",
+  "2026-09-24","2026-09-25","2026-10-05","2026-10-09","2026-12-25",
+  "2027-01-01","2027-02-05","2027-02-08","2027-03-01","2027-05-05","2027-05-13","2027-08-16",
+  "2027-09-14","2027-09-15","2027-09-16","2027-10-04","2027-10-11","2027-12-27"
+]);
+
+/* 작성 가이드: 법원 공식 양식을 안내할 뿐, 문서를 만들지 않음 */
+const GUIDES = {
+  jigeup: { title: "지급명령 신청서 작성 가이드", where: "대법원 전자소송(ecfs.scourt.go.kr) → 서류제출 → 민사 → 지급명령신청",
+    intro: "지급명령 신청서는 법원에 내는 서류라, 이 앱은 대신 만들지 않아요. 전자소송 사이트의 입력 화면을 따라가며 직접 쓰게 돼요. 각 칸이 무엇을 뜻하는지만 정리했어요.",
+    fields: [
+      ["채권자", "돈을 받을 사람(신청하는 사람)이에요. 주민등록상 이름과 주소를 적어요."],
+      ["채무자", "돈을 갚아야 할 사람이에요. 주소를 모르면 송달이 안 돼 보정명령이 나올 수 있어요."],
+      ["청구취지", "법원에 무엇을 명령해 달라는지 적는 칸이에요. 금액과 이자(지연손해금)의 계산 시작일이 들어가요."],
+      ["청구원인", "왜 그 돈을 받아야 하는지 사실관계를 날짜순으로 적는 칸이에요."],
+      ["소명방법", "주장을 뒷받침하는 자료 목록이에요. 이체 내역, 대화 캡처 등을 첨부해요."]
+    ],
+    notes: ["채무자가 2주 안에 이의신청하면 소송으로 넘어가요.", "인지대와 송달료는 비용 계산기에서 미리 볼 수 있어요.", "어떻게 써야 할지 판단이 필요하면 대한법률구조공단(132)에 물어보세요."] },
+  soaek: { title: "소액소송 소장 작성 가이드", where: "대법원 전자소송(ecfs.scourt.go.kr) → 서류제출 → 민사 → 소장",
+    intro: "소장은 법원에 내는 서류라, 이 앱은 대신 만들지 않아요. 전자소송의 소장 양식을 따라가며 직접 써요. 각 칸이 무엇을 뜻하는지만 정리했어요.",
+    fields: [
+      ["원고·피고", "소송을 내는 사람(원고)과 상대방(피고)이에요."],
+      ["사건명", "어떤 종류의 청구인지 적어요. 예: 대여금, 손해배상(기), 임대차보증금반환"],
+      ["청구취지", "판결로 받고 싶은 결과를 적는 칸이에요."],
+      ["청구원인", "청구의 근거가 되는 사실을 적는 칸이에요."],
+      ["입증방법", "증거 목록이에요. 갑 제1호증, 갑 제2호증 순으로 번호를 붙여요."]
+    ],
+    notes: ["3,000만 원 이하 금전 청구는 소액사건으로 진행돼요.", "비용은 비용 계산기에서 미리 볼 수 있어요."] },
+  dapbyeon: { title: "답변서 작성 가이드", where: "대법원 전자소송(ecfs.scourt.go.kr) → 서류제출 → 민사 → 답변서 (종이로 낼 때는 법원 민원실 양식)",
+    intro: "답변서는 법원에 내는 서류라, 이 앱은 대신 만들지 않아요. 각 칸이 무엇을 뜻하는지만 정리했어요.",
+    fields: [
+      ["사건번호", "소장과 함께 온 안내서에 적힌 번호예요. 예: 2026가소000000"],
+      ["청구취지에 대한 답변", "원고 청구를 받아들이는지 다투는지 적는 칸이에요."],
+      ["청구원인에 대한 답변", "원고가 주장한 사실 중 인정하는 부분과 다투는 부분을 적는 칸이에요."],
+      ["입증방법", "내 주장을 뒷받침하는 증거 목록이에요. 을 제1호증 순으로 번호를 붙여요."]
+    ],
+    notes: ["제출 기한은 '받은 서류 → 소장 부본'에서 계산해 볼 수 있어요.", "판단이 필요하면 대한법률구조공단(132)에 물어보세요."] },
+  naeyong: { title: "내용증명 빈 양식", where: "우체국 창구 또는 인터넷우체국(같은 내용 3부: 발송·우체국 보관·본인 보관)",
+    intro: "내용증명은 법원에 내는 서류가 아니라 상대방에게 보내는 편지예요. 아래 빈 양식은 형식만 잡아 두었고, 본문은 직접 쓰셔야 해요. 앱은 문장을 고르거나 만들어 주지 않아요.",
+    fields: [
+      ["발신인·수신인", "보내는 사람과 받는 사람의 이름, 주소예요."],
+      ["제목", "무엇에 관한 편지인지 짧게 적어요."],
+      ["본문", "직접 쓰는 부분이에요."],
+      ["날짜·서명", "보내는 날짜와 이름을 적어요."]
+    ],
+    notes: ["우체국은 같은 내용 3부를 요구해요."], blank: true }
+};
+
+/* ---------- 상태 ---------- */
+const state = {
+  tab: "home", stack: [], query: "", filterType: "전체", filterResult: "전체",
+  cases: [], letters: [], receivedDate: {}, receivedDays: {}, confirmed: {},
+  cost: { amount: 8000000, proc: "jigeup", e: true, parties: 2 }, reportOpen: false, letter: { sender: "", receiver: "", title: "", body: "" }
+};
+let downloadsApi = null;
+
+function seed() {
+  return [{ id: "case-ex", title: "예시 사건: 전세 보증금", topic: "lease", example: true, created: todayISO(),
+    note: "2025년 3월 계약 만료. 보증금 반환을 기다리는 중.",
+    deadlines: [{ id: "d1", label: "임대인에게 알린 반환 요청 날짜 (직접 입력)", date: addDays(todayISO(), 9) }],
+    evidence: [{ date: "2025-01-10", memo: "계약 만료 두 달 전 보낸 문자 캡처", file: "문자캡처.png" }, { date: "2025-03-31", memo: "열쇠 반환 사진", file: "" }],
+    precedents: ["ex-lease-1"] }];
+}
+function load() {
+  try { const raw = localStorage.getItem("beopmu-proto-v2"); if (raw) { const d = JSON.parse(raw); state.cases = d.cases || []; state.letters = d.letters || []; return; } } catch (e) { /* 저장소 없음 */ }
+  state.cases = seed();
+}
+function save() { try { localStorage.setItem("beopmu-proto-v2", JSON.stringify({ cases: state.cases, letters: state.letters })); } catch (e) { /* 무시 */ } }
+
+/* ---------- 유틸 ---------- */
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const won = n => Number(n || 0).toLocaleString("ko-KR");
+function iso(d) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; }
+function todayISO() { return iso(new Date()); }
+function parse(s) { const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d); }
+function addDays(s, n) { const d = parse(s); d.setDate(d.getDate() + n); return iso(d); }
+function fmtDate(s) { if (!s) return "____. __. __."; const d = parse(s); return `${d.getFullYear()}. ${d.getMonth() + 1}. ${d.getDate()}.`; }
+function weekday(s) { return ["일", "월", "화", "수", "목", "금", "토"][parse(s).getDay()]; }
+function isOff(s) { const w = parse(s).getDay(); return w === 0 || w === 6 || HOLIDAYS.has(s); }
+function deadlineFrom(received, days) {
+  const raw = addDays(received, days); let end = raw; const skipped = [];
+  while (isOff(end)) { skipped.push(end); end = addDays(end, 1); }
+  return { raw, end, skipped };
+}
+function dday(s) {
+  const diff = Math.round((parse(s) - parse(todayISO())) / 86400000);
+  const label = diff === 0 ? "D-day" : diff > 0 ? `D-${diff}` : `D+${-diff}`;
+  const cls = diff < 0 ? "ok" : diff <= 3 ? "crit" : diff <= 7 ? "warn" : "ok";
+  return `<span class="dday ${cls}">${label}</span>`;
+}
+function toast(msg) { const t = document.getElementById("toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove("show"), 2600); }
+const uid = () => Math.random().toString(36).slice(2, 9);
+
+/* ---------- 판례 검색 (기기 안에서) ---------- */
+function searchPrecedents() {
+  const q = state.query.trim().split(/\s+/).filter(Boolean);
+  return PRECEDENTS.filter(p => {
+    if (state.filterType !== "전체" && p.type !== state.filterType) return false;
+    if (state.filterResult === "인정" && !["청구 인정", "일부 인정", "유죄"].includes(p.result)) return false;
+    if (state.filterResult === "기각" && !["청구 기각", "무죄"].includes(p.result)) return false;
+    if (!q.length) return true;
+    const hay = [p.title, p.type, p.oneLine, p.reason, ...p.facts].join(" ");
+    return q.every(w => hay.includes(w));
+  });
+}
+
+/* ---------- 렌더 ---------- */
+const ICONS = {
+  home: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1z"/></svg>',
+  prec: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>',
+  cases: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></svg>',
+  tools: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 11h2M12 11h2M16 11h0M8 15h2M12 15h2M8 18h2M12 18h4M16 15v0"/></svg>',
+  help: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8.5"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .8-1 1.5V14M12 17h.01"/></svg>'
+};
+const TAB_LIST = [["home", "홈"], ["prec", "판례 검색"], ["cases", "내 사건"], ["tools", "계산·가이드"], ["help", "상담 창구"]];
+
+function render() {
+  const view = state.stack[state.stack.length - 1];
+  const titles = { home: "법률수첩", prec: "판례 검색", cases: "내 사건", tools: "계산·가이드", help: "무료 상담 창구" };
+  let title = titles[state.tab], body = "";
+  if (view) {
+    const i = view.indexOf(":"); const kind = i < 0 ? view : view.slice(0, i), arg = i < 0 ? "" : view.slice(i + 1);
+    if (kind === "prec") { title = "판례 보기"; body = renderPrecedent(PRECEDENTS.find(x => x.id === arg)); }
+    else if (kind === "recv") { title = RECEIVED[arg].name; body = renderReceived(arg); }
+    else if (kind === "topic") { title = TOPICS[arg].name; body = renderTopic(arg); }
+    else if (kind === "case") { title = "사건 기록"; body = renderCase(arg); }
+    else if (kind === "guide") { title = GUIDES[arg].blank ? "내용증명 빈 양식" : "작성 가이드"; body = renderGuide(arg); }
+    else if (kind === "cost") { title = "비용 계산기"; body = renderCost(); }
+  } else body = { home: renderHome, prec: renderPrecList, cases: renderCases, tools: renderTools, help: renderHelp }[state.tab]();
+  document.getElementById("appbar").innerHTML = (view ? `<button class="back" data-a="back" aria-label="뒤로">‹ 뒤로</button>` : "") +
+    `<h1>${esc(title)}</h1><span class="proto">프로토타입</span>`;
+  document.getElementById("main").innerHTML = body;
+  document.getElementById("tabs").innerHTML = TAB_LIST.map(([k, l]) =>
+    `<button data-a="tab" data-v="${k}" ${state.tab === k && !view ? 'aria-current="page"' : ""} ${state.tab === k && view ? 'style="color:var(--accent)"' : ""}>${ICONS[k]}<span>${l}</span></button>`).join("");
+}
+
+function upcoming() {
+  const all = []; state.cases.forEach(c => c.deadlines.forEach(d => all.push({ ...d, caseTitle: c.title })));
+  return all.filter(d => d.date >= todayISO()).sort((a, b) => a.date.localeCompare(b.date));
+}
+
+function renderHome() {
+  const up = upcoming().slice(0, 3);
+  return `
+  <section class="lead">
+    <h2>어떤 일인가요?</h2>
+    <p>해당하는 분야를 고르면 일반적인 절차, 관련 판례, 계산기, 상담 창구를 모아 보여 드려요.</p>
+  </section>
+  <section class="section">
+    <div class="grid2">${Object.entries(TOPICS).map(([k, t]) => `<button class="tile" data-a="open" data-v="topic:${k}"><b>${esc(t.name)}</b><span>${esc(t.sub)}</span></button>`).join("")}</div>
+  </section>
+  <section class="section">
+    <h2>판례 검색</h2>
+    <form class="row" data-form="search" style="flex-wrap:nowrap"><input type="text" id="q" placeholder="예: 보증금 열쇠, 차용증" value="${esc(state.query)}" aria-label="판례 검색어"><button class="btn" type="submit">검색</button></form>
+    <p class="small muted">검색어는 이 기기 안에서만 쓰여요.</p>
+  </section>
+  <section class="section">
+    <h2>뭔가 받으셨나요?</h2>
+    <div class="grid2">${Object.entries(RECEIVED).map(([k, r]) => `<button class="tile" data-a="open" data-v="recv:${k}"><b>${esc(r.name)}</b><span>${esc(r.sub)}</span></button>`).join("")}</div>
+  </section>
+  <section class="section">
+    <div class="spread"><h2>다가오는 마감</h2><button class="chip" data-a="tab" data-v="cases">전체 보기</button></div>
+    ${up.length ? `<div class="card">${up.map(d => `<div class="dline">${dday(d.date)}<div><b class="small">${esc(d.label)}</b><div class="small muted">${esc(d.caseTitle)}</div></div><span class="when">${fmtDate(d.date)}</span></div>`).join("")}</div>`
+      : `<div class="card empty">등록된 마감이 없어요. 받은 서류를 고르면 법에 정해진 기간으로 마감일을 계산해 볼 수 있어요.</div>`}
+  </section>`;
+}
+
+function renderTopic(k) {
+  const t = TOPICS[k];
+  const precs = PRECEDENTS.filter(p => p.type === t.type);
+  return `
+  <section class="section">
+    <h2>일반적인 절차</h2>
+    <p class="small muted">많이 쓰이는 절차를 정리한 일반 정보예요. 어떤 절차가 내 상황에 맞는지는 상담 창구에서 확인하세요.</p>
+    <ol class="steps">${t.steps.map(([h, d]) => `<li><b>${esc(h)}</b><p class="small muted">${esc(d)}</p></li>`).join("")}</ol>
+  </section>
+  ${precs.length ? `<section class="section"><div class="spread"><h2>관련 판례</h2><span class="chip warn">가상 예시</span></div>${precs.map(precCard).join("")}</section>` : ""}
+  <section class="section">
+    <h2>도구</h2>
+    ${t.guides.map(g => `<button class="card tap" data-a="open" data-v="guide:${g}"><h3>${esc(GUIDES[g].title)}</h3><p class="small muted">${GUIDES[g].blank ? "형식만 있는 빈 양식" : "법원 공식 양식의 각 칸 설명"}</p></button>`).join("")}
+    <button class="card tap" data-a="open" data-v="cost"><h3>비용 계산기</h3><p class="small muted">인지대와 송달료를 법에 정해진 공식으로 계산해요.</p></button>
+    <button class="btn secondary" data-a="newCaseTopic" data-v="${k}">이 분야로 내 사건 만들기</button>
+  </section>
+  <section class="section">
+    <div class="banner info"><p class="small">무료로 물어볼 곳: 대한법률구조공단 전화 132, 마을변호사(주민센터 문의)</p><div><button class="btn ghost" data-a="tab" data-v="help">상담 창구 전체 보기</button></div></div>
+  </section>`;
+}
+
+function resultChip(r) { return `<span class="chip ${["청구 인정", "유죄"].includes(r) ? "solid" : r === "일부 인정" ? "accent" : ""}">${esc(r)}</span>`; }
+function precCard(p) {
+  return `<button class="card tap" data-a="open" data-v="prec:${p.id}">
+    <div class="row">${resultChip(p.result)}<span class="chip">${esc(p.type)}</span><span class="chip">${p.level}</span></div>
+    <h3>${esc(p.title)}</h3><p class="small muted">${esc(p.oneLine)}</p></button>`;
+}
+
+function renderPrecList() {
+  const list = searchPrecedents();
+  const types = ["전체", ...new Set(PRECEDENTS.map(p => p.type))];
+  return `
+  <div class="banner warn"><h3>지금 보이는 판례는 모두 가상 예시예요</h3><p class="small">정식 버전에서는 국가법령정보센터의 공개 판례만 보여 주고, 사건번호가 실제로 있는지 확인된 판례만 띄워요.</p></div>
+  <section class="section">
+    <form class="row" data-form="search" style="flex-wrap:nowrap"><input type="text" id="q" placeholder="검색어 (예: 열쇠 반환)" value="${esc(state.query)}" aria-label="판례 검색어"><button class="btn" type="submit">검색</button></form>
+    <label class="field" for="ftype">분야<select id="ftype" data-a="ftype">${types.map(t => `<option ${t === state.filterType ? "selected" : ""}>${t}</option>`).join("")}</select></label>
+    <div class="seg" role="group" aria-label="결과">${["전체", "인정", "기각"].map(r => `<button data-a="fres" data-v="${r}" aria-pressed="${state.filterResult === r}">${r === "전체" ? "전체" : r === "인정" ? "청구 인정·유죄" : "청구 기각·무죄"}</button>`).join("")}</div>
+    <p class="small muted">${list.length}건${state.query ? ` · "${esc(state.query)}"` : ""}</p>
+    ${list.map(precCard).join("") || `<div class="card empty">조건에 맞는 판례가 없어요. 검색어를 줄여 보세요.</div>`}
+  </section>`;
+}
+
+function renderPrecedent(p) {
+  return `
+  <div class="banner warn"><p class="small"><b>가상 예시 판례예요.</b> 실제 판례가 아니라 화면 흐름을 보여 주기 위한 예시예요.</p></div>
+  <section class="section">
+    <div class="row">${resultChip(p.result)}<span class="chip">${esc(p.type)}</span><span class="chip">${p.level}</span><span class="chip">사건번호 검증: 예시라 해당 없음</span></div>
+    <h2 style="font-size:20px">${esc(p.title)}</h2>
+    <p>${esc(p.oneLine)}</p>
+  </section>
+  <section class="section"><h2>판결 이유 요약</h2><p class="muted">${esc(p.reason)}</p></section>
+  <section class="section"><h2>판결문에 나온 사실관계</h2><ul class="list-plain">${p.facts.map(f => `<li>${esc(f)}</li>`).join("")}</ul>
+    <p class="small muted">판결은 사건마다 사실관계가 달라 다른 사건에 그대로 적용되지 않아요.</p></section>
+  <section class="section">
+    ${state.cases.length ? `<label class="field small" for="tocase">내 사건에 저장<select id="tocase">${state.cases.map(cs => `<option value="${cs.id}">${esc(cs.title)}</option>`).join("")}</select></label>
+      <button class="btn secondary" data-a="savePrec" data-v="${p.id}">이 판례를 사건에 저장</button>` : ""}
+    <button class="btn ghost" data-a="report">${state.reportOpen ? "신고 닫기" : "요약이 틀렸어요"}</button>
+    ${state.reportOpen ? `<div class="card"><label class="field small" for="reportText">무엇이 틀렸나요?<textarea id="reportText" style="min-height:80px" placeholder="예: 요약과 판결 이유가 달라요."></textarea></label><button class="btn" data-a="sendReport">신고 보내기</button></div>` : ""}
+  </section>`;
+}
+
+function renderReceived(k) {
+  const r = RECEIVED[k];
+  const recv = state.receivedDate[k] || todayISO();
+  const days = r.ask ? (state.receivedDays[k] || r.days) : r.days;
+  let result = "", calc = null;
+  if (r.none) result = `<div class="card"><b>법이 정한 답장 기한은 없어요</b><p class="small muted">${esc(r.ifNot)}</p></div>`;
+  else if (r.date) result = `<div class="card"><p class="small muted">요구서에 적힌 출석일</p><div class="spread"><div class="big-date">${fmtDate(recv)} (${weekday(recv)})</div>${dday(recv)}</div></div>`;
+  else {
+    calc = deadlineFrom(recv, days);
+    result = `<div class="card">
+      <p class="small muted">계산한 ${esc(r.action)} 마감일</p>
+      <div class="spread"><div class="big-date">${fmtDate(calc.end)} (${weekday(calc.end)})</div>${dday(calc.end)}</div>
+      <dl class="kv small">
+        <dt>근거</dt><dd>${esc(r.basis)}</dd>
+        <dt>기간</dt><dd>${days}일</dd>
+        <dt>세기 시작</dt><dd>${fmtDate(addDays(recv, 1))} (받은 다음 날)</dd>
+        <dt>기간 끝날</dt><dd>${fmtDate(calc.raw)} (${weekday(calc.raw)})</dd>
+        ${calc.skipped.length ? `<dt>미룬 이유</dt><dd>끝날이 토·일·공휴일 ${calc.skipped.length}일</dd>` : ""}
+      </dl></div>
+      <div class="banner warn"><p class="small">이 계산은 법에 정해진 기간을 그대로 센 참고값이에요. <b>서류에 적힌 기간과 날짜가 우선</b>이고, 송달받은 날이 다르게 기록됐을 수 있으니 대법원 '나의 사건검색'이나 법원에 꼭 확인하세요.</p></div>`;
+  }
+  const canAdd = !r.none;
+  return `
+  ${r.criminal ? `<div class="banner info"><h3>형사 절차 안내</h3><p class="small">형사 절차는 변호인의 도움을 받을 수 있어요. 국선변호인 제도와 대한법률구조공단(132) 상담을 함께 확인해 보세요.</p></div>` : ""}
+  <section class="section"><h2>이게 뭔가요?</h2><p>${esc(r.what)}</p></section>
+  <section class="section">
+    <h2>${r.date ? "출석일" : r.none ? "기한" : "기한 계산"}</h2>
+    ${r.none ? "" : `<label class="field" for="recvDate">${r.date ? "요구서에 적힌 출석일" : esc(r.from)}<input type="date" id="recvDate" data-a="recvDate" data-v="${k}" value="${recv}"></label>`}
+    ${r.ask ? `<label class="field" for="recvDays">명령서에 적힌 기간 (일)<input type="number" id="recvDays" min="1" max="60" data-a="recvDays" data-v="${k}" value="${days}"></label>` : ""}
+    ${result}
+  </section>
+  ${r.none ? "" : `<section class="section"><h2>법에 정해진 내용</h2><p>${esc(r.ifNot)}</p></section>`}
+  <section class="section"><h2>확인해 볼 것</h2><ol class="list-plain">${r.next.map(n => `<li>${esc(n)}</li>`).join("")}</ol>
+    ${r.guide ? `<button class="btn secondary" data-a="open" data-v="guide:${r.guide}">${esc(GUIDES[r.guide].title)}</button>` : ""}</section>
+  ${canAdd ? `<section class="section">
+    <label class="row small" style="font-weight:500"><input type="checkbox" id="confirmChk" data-a="confirm" data-v="${k}" ${state.confirmed[k] ? "checked" : ""}> 서류에 적힌 날짜·기간과 맞는지 확인했어요</label>
+    <label class="field" for="recvCase">기한을 추가할 사건<select id="recvCase"><option value="__new">새 사건 만들기</option>${state.cases.map(c => `<option value="${c.id}">${esc(c.title)}</option>`).join("")}</select></label>
+    <button class="btn block" data-a="addDeadline" data-v="${k}" ${state.confirmed[k] ? "" : "disabled"}>내 사건에 기한 추가</button></section>` : ""}`;
+}
+
+function renderCases() {
+  return `
+  <section class="section">
+    ${state.cases.length ? state.cases.map(c => {
+      const next = c.deadlines.filter(d => d.date >= todayISO()).sort((a, b) => a.date.localeCompare(b.date))[0];
+      return `<button class="card tap" data-a="open" data-v="case:${c.id}">
+        <div class="spread"><div class="row"><span class="chip accent">${esc(TOPICS[c.topic] ? TOPICS[c.topic].name : "받은 서류")}</span>${c.example ? '<span class="chip warn">예시</span>' : ""}</div>${next ? dday(next.date) : ""}</div>
+        <h3>${esc(c.title)}</h3>
+        <p class="small muted">${next ? `다음 마감: ${esc(next.label)} · ${fmtDate(next.date)}` : "등록된 마감 없음"} · 자료 ${c.evidence.length}개</p></button>`;
+    }).join("") : `<div class="card empty">저장된 사건이 없어요.</div>`}
+    <button class="btn secondary block" data-a="newCase">빈 사건 만들기</button>
+    <p class="small muted">사건 기록은 이 브라우저에만 저장되고, 서버나 AI로 보내지 않아요.</p>
+  </section>`;
+}
+
+function renderCase(id) {
+  const c = state.cases.find(x => x.id === id);
+  if (!c) return `<div class="empty">사건을 찾을 수 없어요.</div>`;
+  const dl = [...c.deadlines].sort((a, b) => a.date.localeCompare(b.date));
+  const ev = [...c.evidence].sort((a, b) => a.date.localeCompare(b.date));
+  return `
+  <section class="section">
+    <div class="row"><span class="chip accent">${esc(TOPICS[c.topic] ? TOPICS[c.topic].name : "받은 서류")}</span>${c.example ? '<span class="chip warn">예시</span>' : ""}</div>
+    <label class="field" for="caseTitle">사건 이름<input type="text" id="caseTitle" data-a="caseTitle" data-v="${c.id}" value="${esc(c.title)}"></label>
+    <label class="field" for="caseNote">메모<textarea id="caseNote" data-a="caseNote" data-v="${c.id}" style="min-height:72px" placeholder="나만 보는 메모예요.">${esc(c.note || "")}</textarea></label>
+  </section>
+  <section class="section">
+    <h2>기한</h2>
+    <div class="card">${dl.length ? dl.map(d => `<div class="dline">${dday(d.date)}<div><b class="small">${esc(d.label)}</b><div class="when">${fmtDate(d.date)} (${weekday(d.date)})</div></div><button class="chip" data-a="delDeadline" data-v="${c.id}|${d.id}" aria-label="기한 삭제">삭제</button></div>`).join("") : `<p class="empty">등록된 기한이 없어요.</p>`}</div>
+    <details class="card"><summary class="small">기한 직접 추가</summary>
+      <div class="stack" style="margin-top:10px"><label class="field small" for="dlLabel">무엇의 기한인가요?<input type="text" id="dlLabel" placeholder="예: 서류에 적힌 제출 기한"></label>
+      <label class="field small" for="dlDate">날짜<input type="date" id="dlDate" value="${todayISO()}"></label>
+      <button class="btn secondary" data-a="addDl" data-v="${c.id}">추가</button></div></details>
+  </section>
+  <section class="section">
+    <h2>자료 정리함</h2>
+    <div class="card">${ev.length ? ev.map(e => `<div class="ev"><span class="when">${fmtDate(e.date)}</span><div>${esc(e.memo)}${e.file ? `<div class="small muted">파일: ${esc(e.file)}</div>` : ""}</div></div>`).join("") : `<p class="empty">아직 자료가 없어요.</p>`}</div>
+    <details class="card"><summary class="small">자료 추가</summary>
+      <div class="stack" style="margin-top:10px">
+        <label class="field small" for="evDate">있었던 날<input type="date" id="evDate" value="${todayISO()}"></label>
+        <label class="field small" for="evMemo">무엇인가요?<input type="text" id="evMemo" placeholder="예: 갚겠다고 한 메시지 캡처"></label>
+        <label class="field small" for="evFile">파일 (선택)<input type="file" id="evFile"></label>
+        <p class="small muted">프로토타입에서는 파일 이름만 기록해요.</p>
+        <button class="btn secondary" data-a="addEv" data-v="${c.id}">추가</button></div></details>
+  </section>
+  <section class="section">
+    <h2>저장한 판례</h2>
+    ${c.precedents.length ? c.precedents.map(pid => PRECEDENTS.find(p => p.id === pid)).filter(Boolean).map(precCard).join("") : `<div class="card empty">판례 화면에서 저장할 수 있어요.</div>`}
+  </section>
+  <button class="btn ghost" data-a="delCase" data-v="${c.id}">이 사건 삭제</button>`;
+}
+
+function renderTools() {
+  return `
+  <section class="section">
+    <h2>계산기</h2>
+    <button class="card tap" data-a="open" data-v="cost"><h3>비용 계산기</h3><p class="small muted">지급명령·소액소송·민사소송의 인지대와 송달료</p></button>
+    <button class="card tap" data-a="tab" data-v="home"><h3>기한 계산기</h3><p class="small muted">홈 → '뭔가 받으셨나요?'에서 받은 서류를 고르세요</p></button>
+  </section>
+  <section class="section">
+    <h2>작성 가이드</h2>
+    <p class="small muted">법원에 내는 서류는 이 앱이 만들지 않아요. 법원 공식 양식의 각 칸이 무엇을 뜻하는지 안내해요.</p>
+    ${Object.entries(GUIDES).map(([k, g]) => `<button class="card tap" data-a="open" data-v="guide:${k}"><h3>${esc(g.title)}</h3><p class="small muted">${g.blank ? "법원 제출 서류 아님 · 형식만 있는 빈 양식" : "법원 공식 양식 안내"}</p></button>`).join("")}
+  </section>
+  ${state.letters.length ? `<section class="section"><h2>내가 쓴 편지</h2>${state.letters.map(l => `<div class="card"><h3>${esc(l.title || "제목 없음")}</h3><p class="small muted">${fmtDate(l.date)}</p></div>`).join("")}</section>` : ""}`;
+}
+
+function renderGuide(k) {
+  const g = GUIDES[k];
+  const L = state.letter;
+  return `
+  <div class="banner info"><p class="small">${esc(g.intro)}</p></div>
+  <section class="section"><h2>어디서 하나요?</h2><p>${esc(g.where)}</p></section>
+  <section class="section"><h2>${g.blank ? "양식의 구성" : "양식의 각 칸"}</h2>
+    <dl class="guide">${g.fields.map(([h, d]) => `<dt>${esc(h)}</dt><dd class="small muted">${esc(d)}</dd>`).join("")}</dl></section>
+  <section class="section"><h2>알아 둘 것</h2><ul class="list-plain">${g.notes.map(n => `<li>${esc(n)}</li>`).join("")}</ul></section>
+  ${g.blank ? `<section class="section">
+    <h2>직접 쓰기</h2>
+    <label class="field" for="lSender">발신인 (이름, 주소)<textarea id="lSender" data-l="sender" style="min-height:60px">${esc(L.sender)}</textarea></label>
+    <label class="field" for="lReceiver">수신인 (이름, 주소)<textarea id="lReceiver" data-l="receiver" style="min-height:60px">${esc(L.receiver)}</textarea></label>
+    <label class="field" for="lTitle">제목<input type="text" id="lTitle" data-l="title" value="${esc(L.title)}"></label>
+    <label class="field" for="lBody">본문<span class="hint">직접 쓰는 부분이에요.</span><textarea id="lBody" data-l="body" style="min-height:180px">${esc(L.body)}</textarea></label>
+    <div class="paper" id="letterPreview">${esc(letterText())}</div>
+    <div class="grid2"><button class="btn secondary" data-a="copyLetter">복사</button>${downloadsApi ? `<button class="btn secondary" data-a="dlLetter">파일로 저장</button>` : `<button class="btn ghost" data-a="saveLetter">기기에 저장</button>`}</div>
+    ${downloadsApi ? `<button class="btn ghost" data-a="saveLetter">기기에 저장</button>` : ""}
+  </section>` : `<button class="btn secondary block" data-a="open" data-v="cost">비용 계산기 열기</button>`}`;
+}
+function letterText() {
+  const L = state.letter;
+  return `내 용 증 명\n\n발신인  ${L.sender || "(발신인)"}\n수신인  ${L.receiver || "(수신인)"}\n\n제목: ${L.title || "(제목)"}\n\n${L.body || "(본문)"}\n\n${fmtDate(todayISO())}\n\n발신인  (서명)`;
+}
+
+function stampFee(amount, proc, e) {
+  const a = Math.max(0, Number(amount) || 0);
+  let base = a < 1e7 ? a * 5 / 1000 : a < 1e8 ? a * 45 / 10000 + 5000 : a < 1e9 ? a * 40 / 10000 + 55000 : a * 35 / 10000 + 555000;
+  if (proc === "jigeup") base = base / 10;
+  if (e) base = base * 9 / 10;
+  let fee = Math.floor(base / 100 + 1e-9) * 100;
+  if (fee < 1000) fee = 1000;
+  return fee;
+}
+function renderCost() {
+  const c = state.cost;
+  const times = { jigeup: 6, small: 10, single: 15 }[c.proc];
+  const parties = Math.max(2, Number(c.parties) || 2);
+  const payers = c.e && times > 6 ? parties - 1 : parties;
+  const stamp = stampFee(c.amount, c.proc, c.e), service = payers * times * SERVICE_FEE;
+  const smallOver = c.proc === "small" && Number(c.amount) > 3e7;
+  return `
+  <section class="section">
+    <label class="field" for="cAmt">청구 금액 (원)<input type="number" id="cAmt" inputmode="numeric" min="0" data-a="cost" data-v="amount" value="${esc(c.amount)}"><span class="hint">금 ${won(c.amount)}원</span></label>
+    <label class="field" for="cProc">절차<select id="cProc" data-a="cost" data-v="proc">
+      <option value="jigeup" ${c.proc === "jigeup" ? "selected" : ""}>지급명령</option>
+      <option value="small" ${c.proc === "small" ? "selected" : ""}>소액소송 (3,000만 원 이하)</option>
+      <option value="single" ${c.proc === "single" ? "selected" : ""}>민사 1심 (단독·합의)</option></select></label>
+    <div class="grid2">
+      <label class="field" for="cE">제출 방식<select id="cE" data-a="cost" data-v="e"><option value="1" ${c.e ? "selected" : ""}>전자소송</option><option value="0" ${!c.e ? "selected" : ""}>종이</option></select></label>
+      <label class="field" for="cP">당사자 수<input type="number" id="cP" min="2" max="20" data-a="cost" data-v="parties" value="${parties}"></label>
+    </div>
+    ${smallOver ? `<div class="banner warn"><p class="small">소액사건은 3,000만 원 이하 금전 청구예요. 금액이 넘으면 민사 1심을 골라 계산하세요.</p></div>` : ""}
+  </section>
+  <div class="card"><dl class="kv"><dt>인지대</dt><dd>${won(stamp)}원</dd><dt>송달료</dt><dd>${won(service)}원</dd><dt>합계</dt><dd class="total">${won(stamp + service)}원</dd></dl></div>
+  <div class="card"><b class="small">계산 근거</b>
+    <ul class="list-plain small muted">
+      <li>인지대: 민사소송 등 인지법 제2조 구간별 공식${c.proc === "jigeup" ? ", 지급명령은 그 10분의 1(제7조)" : ""}${c.e ? ", 전자소송은 10분의 9(제16조)" : ""}. 100원 미만 버림, 최소 1,000원.</li>
+      <li>송달료: 1회분 ${won(SERVICE_FEE)}원(2026. 7. 1.부터) × ${times}회분 × ${payers}명${payers < parties ? " (전자소송 동의자 본인 몫 제외)" : ""}.</li>
+      <li>송달료는 사건이 끝나면 남은 금액을 돌려받아요. 실제 납부액은 전자소송 화면에 나오는 값이 기준이에요.</li>
+    </ul></div>`;
+}
+
+function renderHelp() {
+  const places = [
+    ["대한법률구조공단", "전화 132", "무료 법률상담과 소송 지원을 해요. 소득 기준에 따라 소송 대리도 받을 수 있어요.", "https://www.klac.or.kr"],
+    ["마을변호사", "읍·면·동 주민센터", "법무부가 지정한 변호사에게 무료 상담을 받을 수 있어요.", ""],
+    ["주택임대차분쟁조정위원회", "보증금·수리비 분쟁", "소송보다 빠르고 비용이 적은 조정 절차예요.", ""],
+    ["한국소비자원 1372 소비자상담센터", "전화 1372", "물건·서비스 거래 분쟁 상담과 피해구제를 받을 수 있어요.", ""],
+    ["경찰청 사이버범죄 신고시스템", "ecrm.police.go.kr", "중고거래 사기 같은 온라인 범죄를 신고해요.", "https://ecrm.police.go.kr"],
+    ["대법원 전자소송", "ecfs.scourt.go.kr", "지급명령, 소장, 답변서를 법원 공식 양식으로 직접 내요.", "https://ecfs.scourt.go.kr"]
+  ];
+  return `
+  <section class="section">
+    ${places.map(([n, s, d, u]) => `<div class="card"><div class="spread"><h3>${esc(n)}</h3><span class="chip">${esc(s)}</span></div><p class="small muted">${esc(d)}</p>${u ? `<a class="small" href="${u}" target="_blank" rel="noopener">${esc(u.replace("https://", ""))} 열기</a>` : ""}</div>`).join("")}
+    <p class="small muted">이 앱은 어떤 기관·전문가와도 돈을 주고받지 않아요.</p>
+  </section>
+  <section class="section">
+    <h2>이 앱이 하지 않는 일</h2>
+    <ul class="list-plain">
+      <li>내 상황을 분석하거나 결과를 예측하지 않아요.</li>
+      <li>법원·검찰·등기소에 내는 서류를 만들어 주지 않아요.</li>
+      <li>입력한 내용을 서버나 AI로 보내지 않아요.</li>
+      <li>광고, 분석 도구, 후원, 유료 기능이 없어요.</li>
+    </ul>
+  </section>
+  <section class="section">
+    <h2>프로토타입 안내</h2>
+    <ul class="list-plain small muted"><li>판례는 모두 가상 예시예요.</li><li>공휴일은 2026~2027년 목록으로 계산해요.</li><li>이 앱의 정보는 법률자문이 아니에요.</li></ul>
+    <button class="btn ghost" data-a="reset">예시 데이터로 초기화</button>
+  </section>`;
+}
+
+/* ---------- 동작 ---------- */
+function openView(v) { state.stack.push(v); state.reportOpen = false; render(); document.getElementById("main").scrollTop = 0; }
+function newCase(title, topic) { const c = { id: uid(), title, topic, created: todayISO(), note: "", deadlines: [], evidence: [], precedents: [] }; state.cases.unshift(c); save(); return c; }
+async function copy(text) { try { await navigator.clipboard.writeText(text); toast("복사했어요."); } catch (e) { toast("복사가 막혔어요. 글을 길게 눌러 직접 복사해 주세요."); } }
+
+document.addEventListener("submit", e => {
+  const f = e.target; if (f.dataset.form !== "search") return;
+  e.preventDefault(); state.query = document.getElementById("q").value; state.tab = "prec"; state.stack = []; render();
+});
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-a]"); if (!b || b.tagName === "SELECT" || b.tagName === "INPUT") return;
+  const a = b.dataset.a, v = b.dataset.v;
+  if (a === "tab") { state.tab = v; state.stack = []; render(); document.getElementById("main").scrollTop = 0; }
+  else if (a === "back") { state.stack.pop(); render(); }
+  else if (a === "open") openView(v);
+  else if (a === "fres") { state.filterResult = v; render(); }
+  else if (a === "savePrec") { const c = state.cases.find(x => x.id === document.getElementById("tocase").value); if (c && !c.precedents.includes(v)) c.precedents.push(v); save(); toast(`'${c.title}'에 저장했어요.`); }
+  else if (a === "report") { state.reportOpen = !state.reportOpen; render(); }
+  else if (a === "sendReport") { state.reportOpen = false; render(); toast("고마워요. 프로토타입이라 실제로 전송되지는 않아요."); }
+  else if (a === "addDeadline") {
+    if (!state.confirmed[v]) { toast("서류에 적힌 날짜와 맞는지 먼저 확인해 주세요."); return; }
+    const r = RECEIVED[v]; const recv = state.receivedDate[v] || todayISO();
+    const date = r.date ? recv : deadlineFrom(recv, r.ask ? (state.receivedDays[v] || r.days) : r.days).end;
+    const sel = document.getElementById("recvCase").value;
+    const c = sel === "__new" ? newCase(`${r.name} 대응`, "") : state.cases.find(x => x.id === sel);
+    c.deadlines.push({ id: uid(), label: `${r.name}: ${r.action}`, date }); save(); toast(`'${c.title}'에 ${fmtDate(date)} 기한을 추가했어요.`);
+  }
+  else if (a === "newCase") { const c = newCase("새 사건", ""); openView(`case:${c.id}`); }
+  else if (a === "newCaseTopic") { const c = newCase(`${TOPICS[v].name} 사건`, v); state.tab = "cases"; state.stack = []; openView(`case:${c.id}`); }
+  else if (a === "delDeadline") { const [cid, did] = v.split("|"); const c = state.cases.find(x => x.id === cid); c.deadlines = c.deadlines.filter(d => d.id !== did); save(); render(); }
+  else if (a === "addDl") { const c = state.cases.find(x => x.id === v); const l = document.getElementById("dlLabel").value.trim(); const d = document.getElementById("dlDate").value; if (!l || !d) { toast("기한 이름과 날짜를 넣어 주세요."); return; } c.deadlines.push({ id: uid(), label: l, date: d }); save(); render(); }
+  else if (a === "addEv") { const c = state.cases.find(x => x.id === v); const m = document.getElementById("evMemo").value.trim(); const d = document.getElementById("evDate").value; const f = document.getElementById("evFile").files[0]; if (!m) { toast("무엇인지 적어 주세요."); return; } c.evidence.push({ date: d || todayISO(), memo: m, file: f ? f.name : "" }); save(); render(); }
+  else if (a === "delCase") { if (b.dataset.confirm !== "1") { b.dataset.confirm = "1"; b.textContent = "한 번 더 누르면 삭제돼요"; return; } state.cases = state.cases.filter(c => c.id !== v); save(); state.stack.pop(); render(); toast("사건을 삭제했어요."); }
+  else if (a === "copyLetter") copy(letterText());
+  else if (a === "dlLetter") { if (!downloadsApi) return; downloadsApi.save({ filename: "내용증명.txt", data: letterText() }).then(() => toast("저장했어요."), err => toast(err && err.code === "declined" ? "저장을 취소했어요." : "이 화면에서는 파일 저장을 쓸 수 없어요. 복사를 이용해 주세요.")); }
+  else if (a === "saveLetter") { state.letters.unshift({ id: uid(), date: todayISO(), title: state.letter.title, text: letterText() }); save(); toast("이 기기에 저장했어요. 계산·가이드 탭에서 볼 수 있어요."); }
+  else if (a === "reset") { if (b.dataset.confirm !== "1") { b.dataset.confirm = "1"; b.textContent = "한 번 더 누르면 초기화돼요"; return; } state.cases = seed(); state.letters = []; state.query = ""; save(); render(); toast("초기화했어요."); }
+});
+document.addEventListener("change", e => {
+  const t = e.target, a = t.dataset.a, v = t.dataset.v;
+  if (a === "ftype") { state.filterType = t.value; render(); }
+  else if (a === "recvDate") { state.receivedDate[v] = t.value || todayISO(); state.confirmed[v] = false; render(); }
+  else if (a === "recvDays") { state.receivedDays[v] = Math.max(1, Math.min(60, Number(t.value) || 7)); state.confirmed[v] = false; render(); }
+  else if (a === "confirm") { state.confirmed[v] = t.checked; render(); }
+  else if (a === "caseTitle") { const c = state.cases.find(x => x.id === v); c.title = t.value.trim() || c.title; save(); }
+  else if (a === "caseNote") { const c = state.cases.find(x => x.id === v); c.note = t.value; save(); }
+  else if (a === "cost") { state.cost[v] = v === "e" ? t.value === "1" : v === "proc" ? t.value : Number(t.value); render(); }
+});
+document.addEventListener("input", e => {
+  const k = e.target.dataset.l; if (!k) return;
+  state.letter[k] = e.target.value; const p = document.getElementById("letterPreview"); if (p) p.textContent = letterText();
+});
+
+load(); render();
+(async () => {
+  if (!window.claude || typeof window.claude.use !== "function") return;
+  try { downloadsApi = await window.claude.use("downloads"); } catch (e) { downloadsApi = null; }
+  if (downloadsApi && state.stack.some(v => v.startsWith("guide:"))) render();
+})();
+</script>
+</body>
+</html>
